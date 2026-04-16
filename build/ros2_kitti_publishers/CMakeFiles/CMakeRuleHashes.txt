@@ -1,2 +1,0 @@
-# Hashes of file build rules.
-8ddf8c04072af4be7bdf680352364e11 CMakeFiles/ros2_kitti_publishers_uninstall
