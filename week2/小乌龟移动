@@ -1,1 +1,20 @@
+# 1. 进入ROS2工作空间
+cd ~/ros2_ws
 
+# 2. 拉取远程最新代码（绝对不覆盖原有作业，必做！）
+git pull origin main
+
+# 3. 强制创建week2文件夹（解决目录不存在问题）
+mkdir -p week2
+
+# 4. 把所有小乌龟相关文件一次性移动到week2
+mv data/ src/ .gitignore week2/
+
+# 5. 只添加week2文件夹的修改（不碰根目录任何文件）
+git add week2/
+
+# 6. 提交修改
+git commit -m "feat: 小乌龟代码全部整理到week2文件夹"
+
+# 7. 安全推送到GitHub（仅更新week2，原有代码100%保留）
+git push origin main
