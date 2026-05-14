@@ -1,8 +1,0 @@
-cd ~/ros2_ws
-git pull origin main
-mkdir -p week2
-mv data/ src/ .gitignore week2/
-git add week2/
-git push origin main
-ros2 run turtlesim turtlesim_node
-ros2 run turtlesim turtle_teleop_key
