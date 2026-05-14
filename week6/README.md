@@ -1,5 +1,23 @@
-Week 6：传感器介绍与 ROS2 KITTI 实验
- 
+
+---
+
+### Week 6：传感器介绍与 ROS2 KITTI 实验
+```markdown
+# Week 6: 传感器介绍与 ROS2 KITTI 实验
+
+## 实验内容
+本周完成了以下任务：
+1. 机器人常用感知传感器（相机、激光雷达）工作原理学习
+2. 自动驾驶经典 KITTI 数据集格式与结构解析
+3. 在 ROS2 中读取、解析 KITTI 数据并完成话题发布与可视化
+
+## 运行命令
+```bash
+# 启动 KITTI 数据话题发布节点
+ros2 run kitti_ros kitti_data_publisher
+
+# 打开 RViz2 查看传感器点云与图像数据
+rviz2
 实验内容
  
 本周完成了以下任务：
