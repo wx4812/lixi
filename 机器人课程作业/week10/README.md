@@ -1,20 +1,77 @@
-
----
-
-### Week 10：Docker 概念与 OpenCV 实验
-```markdown
 # Week 10: Docker 概念与 OpenCV 实验
 
-## 实验内容
+## 一、实验目的
+
+本周实验主要学习 Docker 的核心概念，并在 ROS2 Docker 容器中配置 OpenCV 计算机视觉环境。通过本次实验，我希望理解 Docker 镜像、容器、分层存储和环境复现的基本原理，同时掌握在 ROS2 环境中使用 OpenCV 进行图像读取、处理和结果验证的方法。
+
+## 二、实验内容
+
 本周完成了以下任务：
-1. 深入学习 Docker 镜像、容器、分层存储等底层核心原理
-2. 在 ROS2 Docker 容器中完整安装、配置 OpenCV 计算机视觉环境
-3. 实现 ROS2 话题图像接收、OpenCV 图像处理与视觉算法验证
 
-## 运行命令
-```bash
-# 容器内安装 OpenCV 视觉库
-pip install opencv-python
+1. 学习 Docker 镜像、容器、仓库和分层存储等基础概念。
+2. 理解 Docker 在机器人开发环境配置中的作用。
+3. 在 ROS2 Docker 容器中安装 OpenCV 视觉库。
+4. 创建 ROS2 + OpenCV 图像处理节点。
+5. 实现图像读取、灰度化、滤波和边缘检测。
+6. 运行图像处理节点并保存实验结果。
+7. 整理运行命令、实验截图、问题分析和学习总结。
 
-# 运行 ROS2 + OpenCV 图像处理节点
-ros2 run opencv_vision image_process_node
+## 三、实验环境
+
+- 操作系统：Windows + WSL Ubuntu 22.04
+- 容器工具：Docker
+- 机器人系统：ROS2 Humble
+- 图像处理库：OpenCV
+- 编程语言：Python
+- 开发工具：VS Code
+- 构建工具：colcon
+
+## 四、Docker 核心概念
+
+Docker 是一种容器化技术，可以将程序运行所需的系统环境、依赖库和应用程序打包在一起。对于 ROS2 和 OpenCV 这类依赖较多的实验，Docker 可以减少环境配置错误，提高实验的可复现性。
+
+### 1. 镜像
+
+镜像是容器运行的基础，可以理解为一个只读模板。镜像中包含操作系统、软件依赖和程序环境。例如 ROS2 Docker 镜像中已经包含了 ROS2 的基础环境。
+
+### 2. 容器
+
+容器是镜像运行后的实例。一个镜像可以创建多个容器，每个容器之间相互隔离。容器可以运行程序、安装依赖，也可以与宿主机共享目录。
+
+### 3. 分层存储
+
+Docker 镜像采用分层存储结构。每执行一次构建命令，Docker 都可能创建一个新的镜像层。这样可以复用已有层，提高构建速度并节省存储空间。
+
+### 4. Dockerfile
+
+Dockerfile 是用来自动构建镜像的脚本文件，可以写入基础镜像、依赖安装、文件复制和启动命令。通过 Dockerfile 可以让实验环境更容易复现。
+
+## 五、OpenCV 简介
+
+OpenCV 是常用的计算机视觉库，支持图像读取、图像处理、目标检测、特征提取和视频分析等功能。在机器人系统中，OpenCV 常用于摄像头图像处理、目标识别、路径识别和视觉导航。
+
+本次实验主要使用 OpenCV 完成以下图像处理操作：
+
+1. 读取输入图像。
+2. 转换为灰度图。
+3. 使用高斯滤波去除噪声。
+4. 使用 Canny 算法进行边缘检测。
+5. 保存处理结果图像。
+
+## 六、项目结构
+
+建议本周作业目录整理为：
+
+```text
+week10/
+├── README.md
+├── Dockerfile
+├── requirements.txt
+├── src/
+│   └── image_process_node.py
+└── img/
+    ├── docker-build.png
+    ├── docker-run.png
+    ├── opencv-node.png
+    ├── input.png
+    └── result.png
