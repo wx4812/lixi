@@ -16,6 +16,7 @@
 | Week 10 | Docker 概念与 OpenCV 实验 | [查看作业](week10/) |
 | Week 11 | Docker 进阶与 GitHub Pages 网页部署 | [查看作业](week11/) |
 | Week 13 | 四足机器人入门与期末项目实施 | [查看作业](week13/) |
+| Week 14 | 手机遥控 + 局域网通信 + turtlesim 迷宫探索 | [查看作业](week14/) |
 
 ## 关于我
 
