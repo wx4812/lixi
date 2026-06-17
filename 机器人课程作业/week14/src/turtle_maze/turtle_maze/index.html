@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>🐢 Turtle Maze Remote</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --border:   #30363d;
+    --accent:   #00e5a0;
+    --warn:     #ff6b35;
+    --goal:     #ffd700;
+    --text:     #e6edf3;
+    --muted:    #7d8590;
+    --btn:      #21262d;
+    --btn-act:  #00e5a0;
+    --btn-txt-act: #0d1117;
+    --radius:   14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    gap: 12px;
+    user-select: none;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .title {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+  }
+  .conn-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #ff4444;
+    box-shadow: 0 0 6px #ff4444;
+    transition: all .3s;
+  }
+  .conn-dot.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+  /* ── Status strip ── */
+  .status-strip {
+    width: 100%; max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+  }
+  .status-strip span { display: flex; align-items: center; gap: 4px; }
+  .status-strip b { color: var(--text); }
+  .tag-blocked { color: var(--warn) !important; }
+  .tag-goal    { color: var(--goal) !important; font-weight: 700; }
+
+  /* ── Maze canvas ── */
+  .maze-wrap {
+    width: 100%; max-width: 420px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    aspect-ratio: 1;
+  }
+  canvas { width: 100%; height: 100%; display: block; }
+
+  /* ── D-pad ── */
+  .dpad {
+    display: grid;
+    grid-template-columns: repeat(3, 72px);
+    grid-template-rows: repeat(3, 72px);
+    gap: 6px;
+  }
+  .btn {
+    background: var(--btn);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 22px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: background .12s, transform .08s, border-color .12s;
+    touch-action: none;
+  }
+  .btn:active, .btn.pressed {
+    background: var(--btn-act);
+    color: var(--btn-txt-act);
+    border-color: var(--btn-act);
+    transform: scale(.93);
+  }
+  .btn.empty { background: transparent; border-color: transparent; pointer-events: none; }
+
+  /* ── Bottom controls ── */
+  .bottom-row {
+    width: 100%; max-width: 420px;
+    display: flex;
+    gap: 8px;
+  }
+  .ctrl-btn {
+    flex: 1;
+    padding: 12px 0;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--muted);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: all .15s;
+  }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .ctrl-btn.auto-on {
+    background: var(--accent);
+    color: var(--btn-txt-act);
+    border-color: var(--accent);
+  }
+
+  /* ── Goal banner ── */
+  .goal-banner {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.75);
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 12px;
+    z-index: 99;
+    font-size: 28px;
+    color: var(--goal);
+    text-align: center;
+  }
+  .goal-banner.show { display: flex; }
+  .goal-banner button {
+    font-family: inherit;
+    font-size: 15px;
+    padding: 10px 28px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--accent);
+    color: var(--bg);
+    cursor: pointer;
+    font-weight: 700;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="title">🐢 TURTLE MAZE</span>
+  <div class="conn-dot" id="dot"></div>
+</header>
+
+<div class="status-strip" id="status">
+  <span>X: <b id="sx">-</b></span>
+  <span>Y: <b id="sy">-</b></span>
+  <span>θ: <b id="stheta">-</b></span>
+  <span id="sblocked"></span>
+</div>
+
+<div class="maze-wrap">
+  <canvas id="mazeCanvas"></canvas>
+</div>
+
+<div class="dpad">
+  <div class="btn empty"></div>
+  <div class="btn" id="btn-fwd"  data-linear="2.0" data-angular="0.0">▲</div>
+  <div class="btn empty"></div>
+  <div class="btn" id="btn-left" data-linear="0.0" data-angular="1.8">◀</div>
+  <div class="btn" id="btn-stop" id="btn-stop">⏹</div>
+  <div class="btn" id="btn-right" data-linear="0.0" data-angular="-1.8">▶</div>
+  <div class="btn empty"></div>
+  <div class="btn" id="btn-back" data-linear="-2.0" data-angular="0.0">▼</div>
+  <div class="btn empty"></div>
+</div>
+
+<div class="bottom-row">
+  <button class="ctrl-btn" id="btn-auto">🤖 AUTO</button>
+  <button class="ctrl-btn" id="btn-reset">↺ RESET</button>
+</div>
+
+<div class="goal-banner" id="goalBanner">
+  🏆 Goal Reached!<br>
+  <span style="font-size:15px;color:#fff">迷宫完成！</span>
+  <button onclick="doReset()">重新开始</button>
+</div>
+
+<script>
+const WS_URL = `ws://${location.hostname}:8080/ws`;
+let ws, autoMode = false;
+
+// canvas
+const canvas = document.getElementById('mazeCanvas');
+const ctx    = canvas.getContext('2d');
+canvas.width  = 600;
+canvas.height = 600;
+
+// Latest state
+let gState = null;
+
+// ── WebSocket ────────────────────────────────
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen  = () => document.getElementById('dot').classList.add('on');
+  ws.onclose = () => {
+    document.getElementById('dot').classList.remove('on');
+    setTimeout(connect, 1500);
+  };
+  ws.onmessage = (e) => {
+    gState = JSON.parse(e.data);
+    updateUI(gState);
+  };
+}
+connect();
+
+// ── Send commands ────────────────────────────
+function sendCmd(linear, angular) {
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'command', linear, angular }));
+}
+function sendStop() {
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'stop' }));
+}
+function sendAuto() {
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'auto' }));
+}
+function doReset() {
+  document.getElementById('goalBanner').classList.remove('show');
+  if (!ws || ws.readyState !== 1) return;
+  ws.send(JSON.stringify({ type: 'reset' }));
+}
+
+// ── D-pad bindings ────────────────────────────
+document.querySelectorAll('.btn[data-linear]').forEach(btn => {
+  const linear  = parseFloat(btn.dataset.linear);
+  const angular = parseFloat(btn.dataset.angular);
+
+  btn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    btn.classList.add('pressed');
+    sendCmd(linear, angular);
+  }, { passive: false });
+  btn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    btn.classList.remove('pressed');
+    sendStop();
+  }, { passive: false });
+  btn.addEventListener('mousedown', () => { btn.classList.add('pressed'); sendCmd(linear, angular); });
+  btn.addEventListener('mouseup',   () => { btn.classList.remove('pressed'); sendStop(); });
+  btn.addEventListener('mouseleave',() => { btn.classList.remove('pressed'); sendStop(); });
+});
+
+// Stop button
+const stopBtn = document.getElementById('btn-stop');
+stopBtn.addEventListener('touchstart', (e) => { e.preventDefault(); sendStop(); }, { passive: false });
+stopBtn.addEventListener('mousedown',  () => sendStop());
+
+// Auto button
+document.getElementById('btn-auto').addEventListener('click', () => {
+  sendAuto();
+});
+
+// Reset button
+document.getElementById('btn-reset').addEventListener('click', doReset);
+
+// ── Update UI ────────────────────────────────
+function updateUI(s) {
+  document.getElementById('sx').textContent     = s.x.toFixed(2);
+  document.getElementById('sy').textContent     = s.y.toFixed(2);
+  document.getElementById('stheta').textContent = (s.theta * 180 / Math.PI).toFixed(1) + '°';
+
+  const blockedEl = document.getElementById('sblocked');
+  if (s.blocked) {
+    blockedEl.innerHTML = `<span class="tag-blocked">⚠ BLOCKED</span>`;
+  } else if (s.goal_reached) {
+    blockedEl.innerHTML = `<span class="tag-goal">🏆 GOAL!</span>`;
+  } else {
+    blockedEl.textContent = '';
+  }
+
+  // Sync auto button
+  const autoBtn = document.getElementById('btn-auto');
+  if (s.auto_mode) {
+    autoBtn.classList.add('auto-on');
+    autoBtn.textContent = '🤖 AUTO ON';
+  } else {
+    autoBtn.classList.remove('auto-on');
+    autoBtn.textContent = '🤖 AUTO';
+  }
+
+  // Goal banner
+  if (s.goal_reached) {
+    document.getElementById('goalBanner').classList.add('show');
+  }
+
+  drawMaze(s);
+}
+
+// ── Draw maze ────────────────────────────────
+function drawMaze(s) {
+  const W = canvas.width, H = canvas.height;
+  const WMin = s.world_min ?? 0.5;
+  const WMax = s.world_max ?? 10.5;
+  const scale = W / (WMax - WMin);
+
+  function tx(x) { return (x - WMin) * scale; }
+  function ty(y) { return H - (y - WMin) * scale; }
+
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1117';
+  ctx.fillRect(0, 0, W, H);
+
+  // Obstacles
+  ctx.fillStyle = '#30363d';
+  (s.obstacles || []).forEach(([ox, oy, ow, oh]) => {
+    ctx.fillRect(tx(ox), ty(oy + oh), ow * scale, oh * scale);
+  });
+
+  // Goal zone
+  const [gx, gy] = s.goal;
+  const gr = (s.goal_radius ?? 0.6) * scale;
+  ctx.beginPath();
+  ctx.arc(tx(gx), ty(gy), gr, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,215,0,0.18)';
+  ctx.fill();
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = '#ffd700';
+  ctx.font = `${Math.max(12, scale * 0.5)}px monospace`;
+  ctx.textAlign = 'center';
+  ctx.fillText('GOAL', tx(gx), ty(gy) + 4);
+
+  // Start zone
+  const [sx2, sy2] = s.start;
+  ctx.beginPath();
+  ctx.arc(tx(sx2), ty(sy2), gr * 0.7, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0,229,160,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#00e5a0';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Trajectory
+  const traj = s.trajectory || [];
+  if (traj.length > 1) {
+    ctx.beginPath();
+    ctx.moveTo(tx(traj[0][0]), ty(traj[0][1]));
+    for (let i = 1; i < traj.length; i++) {
+      ctx.lineTo(tx(traj[i][0]), ty(traj[i][1]));
+    }
+    ctx.strokeStyle = 'rgba(0,229,160,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  // Turtle
+  const r = 10;
+  const px = tx(s.x), py = ty(s.y);
+  const theta = -s.theta; // canvas Y is flipped
+
+  ctx.save();
+  ctx.translate(px, py);
+  ctx.rotate(theta);
+  // Body
+  ctx.beginPath();
+  ctx.arc(0, 0, r, 0, Math.PI * 2);
+  ctx.fillStyle = s.blocked ? '#ff6b35' : '#00e5a0';
+  ctx.fill();
+  // Direction arrow
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.lineTo(r + 8, 0);
+  ctx.strokeStyle = '#0d1117';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  ctx.restore();
+}
+</script>
+</body>
+</html>
